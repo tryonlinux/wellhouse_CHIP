@@ -129,22 +129,3 @@ doIStayOn()
 uploadFTP()
 runCron()
 
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
