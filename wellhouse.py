@@ -109,7 +109,8 @@ def runCron():
   from subprocess import call
   call(["wget", "-q","--spider",readPrivate(6)])
 def doIStayOn():
- switchOff()  
+  if (tempInside() > 40):
+    switchOff()  
 
 #Start of Program we will Delete Old Data > Check Previous Stat >  Store Previous State >
 #Make sure light is on for pic > Take Pic > Collect Data > 
@@ -120,6 +121,8 @@ previousState = checkState()
 if not (previousState):
   switchOn()
 
+#sleep for 5 seconds to make sure light is on and warmed up
+time.sleep(5)
 takePic()
 writeData()
 doIStayOn()
