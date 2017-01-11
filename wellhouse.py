@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import time
+import os
 import CHIP_IO.GPIO as GPIO
 import glob
 import sys
@@ -12,6 +13,9 @@ import json
 base_dir = '/sys/bus/w1/devices/'
 device_folder = glob.glob(base_dir + '28*')[0]
 device_file = device_folder + '/w1_slave'
+
+#set up CSIDO pin at output (we won't be reading any data from it)
+GPIO.setup("U14_31",GPIO.OUT)
 
 #Removes existing JPEG and Text Files in the wellhouse folder to prepare for new data
 def deleteOld():
@@ -31,15 +35,16 @@ def takePic():
 
 #Switches the Relay on CSID0 to On
 def switchOn():
-  GPIO.setup("U14_31",GPIO.OUT)
   GPIO.output("U14_31",GPIO.HIGH)
   time.sleep(1)
 
 #Switches the Relay on CSID0 to Off
 def switchOff():
-  GPIO.setup("U14_31",GPIO.OUT)
   GPIO.output("U14_31",GPIO.LOW)
 
+#Check the state of the CSIDO Pin
+def checkState():
+  return GPIO.input("U14_31")
 #Reads private data from private.txt in ../private
 #Pass in which row you want, and it will return it as a string
 def readPrivate(intWhichLine):
@@ -98,18 +103,31 @@ def uploadFTP():
   ftp.cwd("/wellhouse/Pictures") #changing to 
   command = "STOR " + time.strftime("%Y%m%d--%H") + ".jpeg"
   ftp.storbinary(command , open(time.strftime("%Y%m%d--%H") + ".jpeg","rb" ))
-  
+
+#Run PHP Cron Job
+def runCron():
+  from subprocess import call
+  call(["wget", "-q","--spider",readPrivate(6)])
+def doIStayOn():
+ switchOff()  
+
+#Start of Program we will Delete Old Data > Check Previous Stat >  Store Previous State >
+#Make sure light is on for pic > Take Pic > Collect Data > 
+#Check if light should remain on > Turn Light off if temp is below threshold >
+#FTP data to Server > Call Cron Job > Save Electricty and look cool doing it
+deleteOld()
+previousState = checkState()
+if not (previousState):
+  switchOn()
+
+takePic()
 writeData()
-#print(readPrivate(0))
-#print(tempInside())
-#print(tempOutside())
+doIStayOn()
+uploadFTP()
+runCron()
 
 
-
-
-
-
-
+  
 
 
 
